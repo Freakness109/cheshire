@@ -138,6 +138,7 @@ package cheshire_pkg;
     bit     Clic;
     bit     IrqRouter;
     bit     BusErr;
+    bit     Sdio;
     // Parameters for Debug Module
     jtag_idcode_t DbgIdCode;
     dw_bt   DbgMaxReqs;
@@ -188,6 +189,11 @@ package cheshire_pkg;
     dw_bt   DmaMemSysDepth;
     aw_bt   DmaJobFifoDepth;
     bit     DmaRAWCouplingAvail;
+    // Parameters for SDIO
+    dw_bt   SdioConfMaxReadTxns;
+    dw_bt   SdioConfMaxWriteTxns;
+    aw_bt   SdioConfAmoNumCuts;
+    bit     SdioConfAmoPostCut;
     // Parameters for GPIO
     bit     GpioInputSyncs;
     // Parameters for AXI RT
@@ -242,6 +248,7 @@ package cheshire_pkg;
     logic i2c_rx_threshold;
     logic i2c_fmt_threshold;
     logic uart;
+    logic sdio;
     logic zero;
   } cheshire_int_intr_t;
 
@@ -337,6 +344,7 @@ package cheshire_pkg;
     aw_bt llc;
     aw_bt spm;
     aw_bt dma;
+    aw_bt sdio;
     aw_bt slink;
     aw_bt ext_base;
     aw_bt num_out;
@@ -363,6 +371,7 @@ package cheshire_pkg;
       r++; ret.map[r] = '{i, AmSpmUnc, AmSpmUnc + SizeSpm};
     end
     if (cfg.Dma)          begin i++; r++; ret.dma = i; ret.map[r] = '{i, 'h0100_0000, 'h0100_1000}; end
+    if (cfg.Sdio)         begin i++; r++; ret.sdio = i; ret.map[r] = '{i, 'h0100_1000, 'h0100_2000}; end
     if (cfg.SerialLink)   begin i++; r++; ret.slink = i;
         ret.map[r] = '{i, cfg.SlinkRegionStart, cfg.SlinkRegionEnd}; end
     // External port indices start after internal ones
@@ -588,6 +597,7 @@ package cheshire_pkg;
     Clic              : 0,
     IrqRouter         : 0,
     BusErr            : 1,
+    Sdio              : 1,
     // Debug
     DbgIdCode         : CheshireIdCode,
     DbgMaxReqs        : 4,
@@ -638,6 +648,11 @@ package cheshire_pkg;
     DmaMemSysDepth      : 8,
     DmaJobFifoDepth     : 2,
     DmaRAWCouplingAvail : 1,
+    // SDIO config
+    SdioConfMaxReadTxns : 1,
+    SdioConfMaxWriteTxns : 1,
+    SdioConfAmoNumCuts   : 1,
+    SdioConfAmoPostCut   : 1,
     // GPIOs
     GpioInputSyncs    : 1,
     // AXI RT

@@ -17,6 +17,10 @@ static inline volatile uint8_t *reg8(void *base, int offs) {
     return (volatile uint8_t *)((uint8_t *)base + offs);
 }
 
+static inline volatile uint16_t *reg16(void *base, int offs) {
+    return (volatile uint16_t *)((uint8_t *)base + offs);
+}
+
 static inline volatile uint32_t *reg32(void *base, int offs) {
     return (volatile uint32_t *)((uint8_t *)base + offs);
 }

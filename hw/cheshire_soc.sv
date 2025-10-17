@@ -82,6 +82,14 @@ module cheshire_soc import cheshire_pkg::*; #(
   output logic [ 3:0]           spih_sd_o,
   output logic [ 3:0]           spih_sd_en_o,
   input  logic [ 3:0]           spih_sd_i,
+  // SDIO host interface
+  output logic       sd_clk_o,
+  output logic       sd_cmd_en_o,
+  output logic       sd_cmd_o,
+  input  logic       sd_cmd_i,
+  output logic       sd_dat_en_o,
+  output logic [3:0] sd_dat_o,
+  input  logic [3:0] sd_dat_i,
   // GPIO interface
   input  logic [31:0] gpio_i,
   output logic [31:0] gpio_o,
@@ -1017,7 +1025,8 @@ module cheshire_soc import cheshire_pkg::*; #(
       axirt       : Cfg.AxiRt,
       clic        : Cfg.Clic,
       irq_router  : Cfg.IrqRouter,
-      bus_err     : Cfg.BusErr
+      bus_err     : Cfg.BusErr,
+      sdio        : Cfg.Sdio
     },
     llc_size      : get_llc_size(Cfg),
     vga_params    : '{
@@ -1343,6 +1352,152 @@ module cheshire_soc import cheshire_pkg::*; #(
     assign intr.intn.spih_error      = 0;
     assign intr.intn.spih_spi_event  = 0;
 
+  end
+
+  ////////////
+  //  SDIO  //
+  ////////////
+
+  if (Cfg.Sdio) begin : gen_sdio
+    axi_slv_req_t sdio_amo_req, sdio_cut_req;
+    axi_slv_rsp_t sdio_amo_rsp, sdio_cut_rsp;
+
+    axi_riscv_atomics_structs #(
+      .AxiAddrWidth     ( Cfg.AddrWidth    ),
+      .AxiDataWidth     ( Cfg.AxiDataWidth ),
+      .AxiIdWidth       ( AxiSlvIdWidth    ),
+      .AxiUserWidth     ( Cfg.AxiUserWidth ),
+      .AxiMaxReadTxns   ( Cfg.SdioConfMaxReadTxns  ),
+      .AxiMaxWriteTxns  ( Cfg.SdioConfMaxWriteTxns ),
+      .AxiUserAsId      ( 1 ),
+      .AxiUserIdMsb     ( Cfg.AxiUserAmoMsb ),
+      .AxiUserIdLsb     ( Cfg.AxiUserAmoLsb ),
+      .RiscvWordWidth   ( 64 ),
+      .NAxiCuts         ( Cfg.SdioConfAmoNumCuts ),
+      .axi_req_t        ( axi_slv_req_t ),
+      .axi_rsp_t        ( axi_slv_rsp_t )
+    ) i_sdio_axi_riscv_atomics_structs (
+      .clk_i,
+      .rst_ni,
+      .axi_slv_req_i ( axi_out_req[AxiOut.sdio] ),
+      .axi_slv_rsp_o ( axi_out_rsp[AxiOut.sdio] ),
+      .axi_mst_req_o ( sdio_amo_req ),
+      .axi_mst_rsp_i ( sdio_amo_rsp )
+    );
+
+    axi_cut #(
+      .Bypass     ( ~Cfg.SdioConfAmoPostCut ),
+      .aw_chan_t  ( axi_slv_aw_chan_t ),
+      .w_chan_t   ( axi_slv_w_chan_t  ),
+      .b_chan_t   ( axi_slv_b_chan_t  ),
+      .ar_chan_t  ( axi_slv_ar_chan_t ),
+      .r_chan_t   ( axi_slv_r_chan_t  ),
+      .axi_req_t  ( axi_slv_req_t ),
+      .axi_resp_t ( axi_slv_rsp_t )
+    ) i_sdio_axi_cut (
+      .clk_i,
+      .rst_ni,
+      .slv_req_i  ( sdio_amo_req ),
+      .slv_resp_o ( sdio_amo_rsp ),
+      .mst_req_o  ( sdio_cut_req ),
+      .mst_resp_i ( sdio_cut_rsp )
+    );
+
+    `AXI_LITE_TYPEDEF_ALL_CT(sdio_axi_lite, sdio_axi_lite_req_t, sdio_axi_lite_rsp_t, addr_t, axi_data_t, axi_strb_t);
+
+    sdio_axi_lite_req_t sdio_lite_req;
+    sdio_axi_lite_rsp_t sdio_lite_rsp;
+    axi_to_axi_lite #(
+      .AxiAddrWidth     ( Cfg.AddrWidth    ),
+      .AxiDataWidth     ( Cfg.AxiDataWidth ),
+      .AxiIdWidth       ( AxiSlvIdWidth    ),
+      .AxiUserWidth     ( Cfg.AxiUserWidth ),
+      .AxiMaxWriteTxns  ( Cfg.SdioConfMaxReadTxns  ),
+      .AxiMaxReadTxns   ( Cfg.SdioConfMaxWriteTxns ),
+      .full_req_t       ( axi_slv_req_t ),
+      .full_resp_t      ( axi_slv_rsp_t ),
+      .lite_req_t       ( sdio_axi_lite_req_t ),
+      .lite_resp_t      ( sdio_axi_lite_rsp_t )
+    ) i_sdio_axi_to_axi_lite (
+      .clk_i,
+      .rst_ni,
+      .test_i     ( test_mode_i   ),
+      .slv_req_i  ( sdio_cut_req  ),
+      .slv_resp_o ( sdio_cut_rsp  ),
+      .mst_req_o  ( sdio_lite_req ),
+      .mst_resp_i ( sdio_lite_rsp )
+    );
+
+    sdio_axi_lite_req_t sdio_lite_req32;
+    sdio_axi_lite_rsp_t sdio_lite_rsp32;
+
+    logic sdio_read_is_upper32_q, sdio_read_is_upper32_d;
+    `FF(sdio_read_is_upper32_q, sdio_read_is_upper32_d, '0, clk_i, rst_ni)
+
+    always_comb begin
+
+      sdio_lite_req32 = sdio_lite_req;
+      sdio_lite_rsp = sdio_lite_rsp32;
+
+      sdio_lite_req32.aw.addr[1:0] = '0;
+      sdio_lite_req32.ar.addr[1:0] = '0;
+
+      if (sdio_lite_req32.aw.addr[2]) begin
+        sdio_lite_req32.w.data = sdio_lite_req.w.data >> 32;
+        sdio_lite_req32.w.strb = sdio_lite_req.w.strb >> 32/8;
+      end
+
+      sdio_read_is_upper32_d = sdio_lite_req32.ar_valid ? sdio_lite_req32.ar.addr[2] : sdio_read_is_upper32_q;
+      if (sdio_read_is_upper32_q) begin
+        sdio_lite_rsp.r.data = sdio_lite_rsp32.r.data << 32;
+      end
+    end
+
+    reg_req_t sdhc_reg_req;
+    reg_rsp_t sdhc_reg_rsp;
+    axi_lite_to_reg #(
+      .ADDR_WIDTH     ( Cfg.AddrWidth ),
+      .DATA_WIDTH     ( 32 ),
+      .axi_lite_req_t ( sdio_axi_lite_req_t ),
+      .axi_lite_rsp_t ( sdio_axi_lite_rsp_t ),
+      .reg_req_t      ( reg_req_t           ),
+      .reg_rsp_t      ( reg_rsp_t           )
+    ) i_sdio_axi_lite_to_reg (
+      .clk_i,
+      .rst_ni,
+      .axi_lite_req_i ( sdio_lite_req32 ),
+      .axi_lite_rsp_o ( sdio_lite_rsp32 ),
+      .reg_req_o      ( sdhc_reg_req    ),
+      .reg_rsp_i      ( sdhc_reg_rsp    )
+    );
+
+    user_sdhci #(
+      .AddrWidth ( Cfg.AddrWidth ),
+      .reg_req_t ( reg_req_t ),
+      .reg_rsp_t ( reg_rsp_t )
+    ) i_user_sdhci (
+      .clk_i,
+      .rst_ni,
+      .reg_req_i   ( sdhc_reg_req ),
+      .reg_rsp_o   ( sdhc_reg_rsp ),
+      .sd_clk_o,
+      .sd_cmd_en_o,
+      .sd_cmd_o,
+      .sd_cmd_i,
+      .sd_dat_en_o,
+      .sd_dat_o,
+      .sd_dat_i,
+      .interrupt_o ( intr.intn.sdio )
+    );
+
+  end else begin : gen_no_sdio
+    assign sd_clk_o = '0;
+    assign sd_cmd_en_o = '0;
+    assign sd_cmd_o = '0;
+    assign sd_dat_en_o = '0;
+    assign sd_dat_o = '0;
+    assign intr.intn.sdio = '0;
+    //assign axi_out_rsp[AxiOut.sdio] = '0;
   end
 
   ////////////

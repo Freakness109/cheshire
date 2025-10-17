@@ -37,11 +37,15 @@ CHS_SW_ALL += $(CHS_SW_LIBS) $(CHS_SW_GEN_HDRS) $(CHS_SW_TESTS) $(CHS_SW_TOOLS)
 ################
 
 CHS_SW_DEPS_INCS  = -I$(CHS_SW_DIR)/deps/printf
+CHS_SW_DEPS_INCS += -I$(CHS_SW_DIR)/deps/sdhci/sw/lib/inc/
 CHS_SW_DEPS_INCS += -I$(CHS_LLC_DIR)/sw/include
 CHS_SW_DEPS_INCS += -I$(AXIRTROOT)/sw/lib
 CHS_SW_DEPS_INCS += -I$(OTPROOT)
 CHS_SW_DEPS_INCS += -I$(OTPROOT)/sw/include
 CHS_SW_DEPS_SRCS  = $(CHS_SW_DIR)/deps/printf/printf.c
+CHS_SW_DEPS_SRCS += $(CHS_SW_DIR)/deps/sdhci/sw/lib/src/sdhc.c
+CHS_SW_DEPS_SRCS += $(CHS_SW_DIR)/deps/sdhci/sw/lib/src/sdmmc.c
+CHS_SW_DEPS_SRCS += $(CHS_SW_DIR)/deps/sdhci/sw/lib/src/sdmmc_mem.c
 CHS_SW_DEPS_SRCS += $(CHS_LLC_DIR)/sw/lib/axi_llc_reg32.c
 CHS_SW_DEPS_SRCS += $(AXIRTROOT)/sw/lib/axirt.c
 CHS_SW_DEPS_SRCS += $(wildcard $(OTPROOT)/sw/device/lib/base/*.c)
