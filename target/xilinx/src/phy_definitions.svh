@@ -42,6 +42,7 @@
   `define USE_CFG_REGS
   `define USE_RAM_DELAY
   `define USE_NUM_LED 8
+  `define USE_SDIO
 `endif
 
 `ifdef TARGET_ZCU102

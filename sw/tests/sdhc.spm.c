@@ -32,7 +32,7 @@ unsigned int rand(void) {
 static u_char scratch[SIZE * BLOCKS] = { 0 };
 _Static_assert(sizeof(scratch) >= 512, "Scratch buffer needs to be atleast 512bytes");
 
-int test_rw(int size, unsigned int seed) {
+int test_rw(size_t size, unsigned int seed) {
     printf("Running read write test with size %d and seed %x\n", size, seed);
 
     bzero((void*) scratch, size);
@@ -94,7 +94,7 @@ int main() {
 
     ASSERT_OK(sdhc_init(&hp, SDHCI_BASE_ADDR, 0, 0));
 
-#define WITH_SD_MODEL
+//#define WITH_SD_MODEL
 //#define SDHC_INITIALIZED_MODEL
 
 #ifdef WITH_SD_MODEL
