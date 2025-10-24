@@ -78,14 +78,14 @@ set_output_delay -max -clock $soc_clk [expr { $SOC_TCK * 0.35 }] [get_ports vga*
 ########
 
 set_input_delay -min -clock $soc_clk [expr { 0.10 * $SOC_TCK }] [ \
-    get_ports {sd_d_* sd_cd_i spih_sd_*}]
+    get_ports {sd_d_io sd_cd_i spih_sd_io}]
 set_input_delay -max -clock $soc_clk [expr { 0.35 * $SOC_TCK }] [ \
-    get_ports {sd_d_* sd_cd_i spih_sd_*}]
+    get_ports {sd_d_io sd_cd_i spih_sd_io}]
 # TODO: fix this by raising it back up...
 set_output_delay -min -clock $soc_clk [expr { 0.020 * $SOC_TCK }] [ \
-    get_ports {sd_d_* sd_*_o spih_sd_* spih_csb_o}]
+    get_ports {sd_d_io sd_cmd_o sd_reset_o sd_slck_o spih_sd_io spih_csb_o}]
 set_output_delay -max -clock $soc_clk [expr { 0.063 * $SOC_TCK }] [ \
-    get_ports {sd_d_* sd_*_o spih_sd_* spih_csb_o}]
+    get_ports {sd_d_io sd_cmd_o sd_reset_o sd_slck_o spih_sd_io spih_csb_o}]
 
 #######
 # I2C #
