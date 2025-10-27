@@ -123,7 +123,7 @@ int main() {
 #endif
 
     printf("Before sdhc_bus_clock\n");
-    ASSERT_OK(sdhc_bus_clock(sc.sch, SDMMC_SDCLK_25MHZ, SDMMC_TIMING_LEGACY));
+    ASSERT_OK(sdhc_bus_clock(sc.sch, SDMMC_SDCLK_50MHZ, SDMMC_TIMING_LEGACY));
     printf("After sdhc_bus_clock\n");
     uart_write_flush(&__base_uart);
 

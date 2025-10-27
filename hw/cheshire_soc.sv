@@ -1474,7 +1474,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     user_sdhci #(
       .AddrWidth ( Cfg.AddrWidth ),
       .reg_req_t ( reg_req_t ),
-      .reg_rsp_t ( reg_rsp_t )
+      .reg_rsp_t ( reg_rsp_t ),
+      .ClkPreDivLog ( 0 )
     ) i_user_sdhci (
       .clk_i,
       .rst_ni,
