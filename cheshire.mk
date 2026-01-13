@@ -171,7 +171,7 @@ $(CHS_ROOT)/target/sim/models/24FC1025.v: $(CHS_ROOT)/Bender.yml | $(CHS_ROOT)/t
 	rm 24xx1025_Verilog_Model.zip
 
 $(CHS_ROOT)/target/sim/models/.sdcard_fetched: $(CHS_ROOT)/Bender.yml | $(CHS_ROOT)/target/sim/models
-	$(MAKE) -C "`bender path sdio`/rtl" deps
+	$(MAKE) -C "`bender path sdhci`" sdhci-sim-model-all SDHCI_ROOT="`bender path sdhci`"
 	touch $@
 
 CHS_SIM_ALL += $(CHS_ROOT)/target/sim/models/s25fs512s.v

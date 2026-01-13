@@ -59,6 +59,17 @@
       reg-names = "control";
       reg = <0x0 0x0 0x0 0x1000>;
     };
+    mmc@1001000 {
+      #address-cells = <1>;
+      #size-cells = <0>;
+      reg = <0 0x1001000 0x0 0x2000>;
+      compatible = "sdhci"; // nuvoton,npcm750-sdhci;
+      bus-width = <4>;
+      max-frequency = <50000000>; // 50MHz
+      disable-wp;
+      interrupts = <52>;
+      interrupt-parent = <&PLIC0>;
+    };
     axi_llc@3001000 {
       compatible = "eth,axi-llc";
       reg = <0x0 0x3001000 0x0 0x5000>;
@@ -111,7 +122,7 @@
       interrupt-controller;
       interrupts-extended = <&CPU0_intc 11 &CPU0_intc 9>;
       riscv,max-priority = <7>;
-      riscv,ndev = <51>;
+      riscv,ndev = <52>;
       reg = <0x0 0x4000000 0x0 0x4000000>;
     };
   };

@@ -59,6 +59,7 @@ module fixture_cheshire_soc #(
   logic [ 3:0]          spih_sd_en;
 
   logic       sd_clk_o;
+  logic       sd_sd_ni;
   logic       sd_cmd_en;
   logic       sd_cmd_o;
   logic       sd_cmd_i;
@@ -132,6 +133,7 @@ module fixture_cheshire_soc #(
     .spih_sd_en_o       ( spih_sd_en  ),
     .spih_sd_i          ( spih_sd_i   ),
     .sd_clk_o           ( sd_clk_o  ),
+    .sd_cd_ni           ( sd_cd_ni  ),
     .sd_cmd_en_o        ( sd_cmd_en ),
     .sd_cmd_o           ( sd_cmd_o  ),
     .sd_cmd_i           ( sd_cmd_i  ),

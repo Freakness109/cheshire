@@ -194,6 +194,7 @@ package cheshire_pkg;
     dw_bt   SdioConfMaxWriteTxns;
     aw_bt   SdioConfAmoNumCuts;
     bit     SdioConfAmoPostCut;
+    word_bt SdioConfDebounceCycles;
     // Parameters for GPIO
     bit     GpioInputSyncs;
     // Parameters for AXI RT
@@ -227,9 +228,10 @@ package cheshire_pkg;
 
   // Defined interrupts
   typedef struct packed {
-    cheshire_bus_err_intr_t bus_err;
-    logic [31:0] gpio;
-    logic usb;
+    cheshire_bus_err_intr_t bus_err; // 53-58
+    logic sdio; // 52
+    logic [31:0] gpio; // 20-51
+    logic usb; // 19
     logic spih_spi_event;
     logic spih_error;
     logic i2c_host_timeout;
@@ -248,7 +250,6 @@ package cheshire_pkg;
     logic i2c_rx_threshold;
     logic i2c_fmt_threshold;
     logic uart;
-    logic sdio;
     logic zero;
   } cheshire_int_intr_t;
 
@@ -649,10 +650,11 @@ package cheshire_pkg;
     DmaJobFifoDepth     : 2,
     DmaRAWCouplingAvail : 1,
     // SDIO config
-    SdioConfMaxReadTxns : 1,
-    SdioConfMaxWriteTxns : 1,
-    SdioConfAmoNumCuts   : 1,
-    SdioConfAmoPostCut   : 1,
+    SdioConfMaxReadTxns    : 1,
+    SdioConfMaxWriteTxns   : 1,
+    SdioConfAmoNumCuts     : 1,
+    SdioConfAmoPostCut     : 1,
+    SdioConfDebounceCycles : 50_000, // 1ms
     // GPIOs
     GpioInputSyncs    : 1,
     // AXI RT

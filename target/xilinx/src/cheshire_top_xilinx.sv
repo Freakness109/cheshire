@@ -74,12 +74,13 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
 `endif
 
 `ifdef USE_SDIO
-  output logic        sd_clk_o,
-  inout  logic        sd_cmd_io,
-  inout  logic        sd_dat0_io,
-  inout  logic        sd_dat1_io,
-  inout  logic        sd_dat2_io,
-  inout  logic        sd_dat3_io,
+  output logic        sdio_clk_o,
+  input  logic        sdio_cd_ni,
+  inout  logic        sdio_cmd_io,
+  inout  logic        sdio_dat0_io,
+  inout  logic        sdio_dat1_io,
+  inout  logic        sdio_dat2_io,
+  inout  logic        sdio_dat3_io,
 `endif
 
 `ifdef USE_FAN
@@ -130,6 +131,7 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
     cheshire_cfg_t ret  = DefaultCfg;
     ret.RtcFreq         = 1000000;
     ret.SerialLink      = 0;
+    ret.SdioConfDebounceCycles = 50_000; // 10ms debounce
   `ifdef USE_USB
     ret.Usb = 1;
   `else
@@ -343,6 +345,7 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   //////////
 
   logic       sdio_cmd_en_o;
+  logic       sdio_cd_ni_sync;
   logic       sdio_cmd_o;
   logic       sdio_cmd_i;
   logic       sdio_dat_en_o;
@@ -350,16 +353,26 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   logic [3:0] sdio_dat_i;
 
 `ifdef USE_SDIO
-    assign sd_cmd_io  = sdio_cmd_en_o ? sdio_cmd_o : 1'bz;
-    assign sd_dat0_io = sdio_dat_en_o ? sdio_dat_o[0] : 1'bz;
-    assign sd_dat1_io = sdio_dat_en_o ? sdio_dat_o[1] : 1'bz;
-    assign sd_dat2_io = sdio_dat_en_o ? sdio_dat_o[2] : 1'bz;
-    assign sd_dat3_io = sdio_dat_en_o ? sdio_dat_o[3] : 1'bz;
-    assign sdio_cmd_i = sd_cmd_io;
-    assign sdio_dat_i[0] = sd_dat0_io;
-    assign sdio_dat_i[1] = sd_dat1_io;
-    assign sdio_dat_i[2] = sd_dat2_io;
-    assign sdio_dat_i[3] = sd_dat3_io;
+    assign sdio_cmd_io  = sdio_cmd_en_o ? sdio_cmd_o : 1'bz;
+    assign sdio_dat0_io = sdio_dat_en_o ? sdio_dat_o[0] : 1'bz;
+    assign sdio_dat1_io = sdio_dat_en_o ? sdio_dat_o[1] : 1'bz;
+    assign sdio_dat2_io = sdio_dat_en_o ? sdio_dat_o[2] : 1'bz;
+    assign sdio_dat3_io = sdio_dat_en_o ? sdio_dat_o[3] : 1'bz;
+    assign sdio_cmd_i = sdio_cmd_io;
+    assign sdio_dat_i[0] = sdio_dat0_io;
+    assign sdio_dat_i[1] = sdio_dat1_io;
+    assign sdio_dat_i[2] = sdio_dat2_io;
+    assign sdio_dat_i[3] = sdio_dat3_io;
+
+    sync #(
+      .STAGES(4),
+      .ResetValue(1'b1)
+    ) i_sdio_cd_sync (
+      .clk_i    (soc_clk),
+      .rst_ni   (~sys_rst),
+      .serial_i (sdio_cd_ni),
+      .serial_o (sdio_cd_ni_sync)
+    );
 `endif
 
   ////////////
@@ -712,14 +725,15 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
     .spih_sd_en_o       ( spi_sd_en       ),
     .spih_sd_i          ( spi_sd_soc_in   ),
 `ifdef USE_SDIO
-    .sd_clk_o,
-`endif
+    .sd_clk_o           ( sdio_clk_o      ),
+    .sd_cd_ni           ( sdio_cd_ni_sync ),
     .sd_cmd_en_o        ( sdio_cmd_en_o   ),
     .sd_cmd_o           ( sdio_cmd_o      ),
     .sd_cmd_i           ( sdio_cmd_i      ),
     .sd_dat_en_o        ( sdio_dat_en_o   ),
     .sd_dat_o           ( sdio_dat_o      ),
     .sd_dat_i           ( sdio_dat_i      ),
+`endif
 `ifdef USE_VGA
     .vga_hsync_o,
     .vga_vsync_o,

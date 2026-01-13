@@ -83,32 +83,33 @@ set_input_delay -max -clock $soc_clk [expr { 0.35 * $SOC_TCK }] [ \
     get_ports {sd_d_io sd_cd_i spih_sd_io}]
 # TODO: fix this by raising it back up...
 set_output_delay -min -clock $soc_clk [expr { 0.020 * $SOC_TCK }] [ \
-    get_ports {sd_d_io sd_cmd_o sd_reset_o sd_slck_o spih_sd_io spih_csb_o}]
+    get_ports {sd_d_io sd_cmd_o sd_reset_o sd_sclk_o spih_sd_io spih_csb_o}]
 set_output_delay -max -clock $soc_clk [expr { 0.063 * $SOC_TCK }] [ \
-    get_ports {sd_d_io sd_cmd_o sd_reset_o sd_slck_o spih_sd_io spih_csb_o}]
+    get_ports {sd_d_io sd_cmd_o sd_reset_o sd_sclk_o spih_sd_io spih_csb_o}]
 
-#########################
-# SD Timing constraints #
-#########################
+###########################
+# SDIO Timing constraints #
+###########################
 
-set sd_ports [get_ports {sd_cmd_io sd_dat0_io sd_dat1_io sd_dat2_io sd_dat3_io}]
+set sdio_ports [get_ports {sdio_cmd_io sdio_dat0_io sdio_dat1_io sdio_dat2_io sdio_dat3_io}]
+# sdio_cd_ni omitted on purpose: it is async to all the clocks and has a sync block in xilinx_top
 
-create_generated_clock  -name SD_CLK \
-                        -source [get_pins sd_clk_o_OBUF_inst/O] \
+create_generated_clock  -name SDIO_CLK \
+                        -source [get_pins sdio_clk_o_OBUF_inst/O] \
                         -divide_by 1 \
-                        [get_ports sd_clk_o]
+                        [get_ports sdio_clk_o]
 
-# SD card outputs (CARD -> FPGA) guarantee 5ns setup/hold times around SD_CLK
+# SDIO card outputs (CARD -> FPGA) guarantee 5ns setup/hold times around SDIO_CLK
 #setup
-set_input_delay -clock [get_clocks SD_CLK] -max -5.0 $sd_ports
+set_input_delay -clock [get_clocks SDIO_CLK] -max -5.0 $sdio_ports
 #hold
-set_input_delay -clock [get_clocks SD_CLK] -min 5.0  $sd_ports
+set_input_delay -clock [get_clocks SDIO_CLK] -min 5.0  $sdio_ports
 
-# SD Cards demands 3ns setup/hold times around SD_CLK
+# SDIO Cards demands 3ns setup/hold times around SDIO_CLK
 #setup
-set_output_delay -clock [get_clocks SD_CLK] -max -3.0 $sd_ports
+set_output_delay -clock [get_clocks SDIO_CLK] -max -3.0 $sdio_ports
 #hold
-set_output_delay -clock [get_clocks SD_CLK] -min 3.0 $sd_ports
+set_output_delay -clock [get_clocks SDIO_CLK] -min 3.0 $sdio_ports
 
 #######
 # I2C #
@@ -243,11 +244,13 @@ set_property -dict { PACKAGE_PIN T20   IOSTANDARD LVCMOS33 } [get_ports { usb_dm
 set_property -dict { PACKAGE_PIN T21   IOSTANDARD LVCMOS33 } [get_ports { usb_dp_io[0] }]; #IO_L4N_T0_D05_14 Sch=ja_n[4]
 
 # PMOD Header JB (Pmod MicroSD)
-set_property -dict { PACKAGE_PIN V29   IOSTANDARD LVCMOS33 }     [get_ports { sd_dat3_io }]; #IO_L17P_T2_A14_D30_14 Sch=jb_p[1]
-set_property -dict { PACKAGE_PIN V30   IOSTANDARD LVCMOS33 }     [get_ports { sd_cmd_io  }]; #IO_L17N_T2_A13_D29_14 Sch=jb_n[1]
-set_property -dict { PACKAGE_PIN V25   IOSTANDARD LVCMOS33 }     [get_ports { sd_dat0_io }]; #IO_L18P_T2_A12_D28_14 Sch=jb_p[2]
-set_property -dict { PACKAGE_PIN W26   IOSTANDARD LVCMOS33 }     [get_ports { sd_clk_o   }]; #IO_L18N_T2_A11_D27_14 Sch=jb_n[2]
-set_property -dict { PACKAGE_PIN T25   IOSTANDARD LVCMOS33 }     [get_ports { sd_dat1_io }]; #IO_L14P_T2_SRCC_14 Sch=jb_p[3]
-set_property -dict { PACKAGE_PIN U25   IOSTANDARD LVCMOS33 }     [get_ports { sd_dat2_io }]; #IO_L14N_T2_SRCC_14 Sch=jb_n[3]
+set_property -dict { PACKAGE_PIN V29   IOSTANDARD LVCMOS33 }     [get_ports { sdio_dat3_io }]; #IO_L17P_T2_A14_D30_14 Sch=jb_p[1]
+set_property -dict { PACKAGE_PIN V30   IOSTANDARD LVCMOS33 }     [get_ports { sdio_cmd_io  }]; #IO_L17N_T2_A13_D29_14 Sch=jb_n[1]
+set_property -dict { PACKAGE_PIN V25   IOSTANDARD LVCMOS33 }     [get_ports { sdio_dat0_io }]; #IO_L18P_T2_A12_D28_14 Sch=jb_p[2]
+set_property -dict { PACKAGE_PIN W26   IOSTANDARD LVCMOS33 }     [get_ports { sdio_clk_o   }]; #IO_L18N_T2_A11_D27_14 Sch=jb_n[2]
+set_property -dict { PACKAGE_PIN T25   IOSTANDARD LVCMOS33 }     [get_ports { sdio_dat1_io }]; #IO_L14P_T2_SRCC_14 Sch=jb_p[3]
+set_property -dict { PACKAGE_PIN U25   IOSTANDARD LVCMOS33 }     [get_ports { sdio_dat2_io }]; #IO_L14N_T2_SRCC_14 Sch=jb_n[3]
+set_property -dict { PACKAGE_PIN U22   IOSTANDARD LVCMOS33 }     [get_ports { sdio_cd_ni   }]; #IO_L21P_T3_DQS_14 Sch=jb_p[4]
+# set_property -dict { PACKAGE_PIN U23   IOSTANDARD LVCMOS33 }     [get_ports { NC-port on SD card reader }]; #IO_L21N_T3_DQS_A06_D22_14 Sch=jb_n[4]
 
 # tclint-enable line-length, spacing

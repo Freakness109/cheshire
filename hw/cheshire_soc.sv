@@ -84,6 +84,7 @@ module cheshire_soc import cheshire_pkg::*; #(
   input  logic [ 3:0]           spih_sd_i,
   // SDIO host interface
   output logic       sd_clk_o,
+  input  logic       sd_cd_ni,
   output logic       sd_cmd_en_o,
   output logic       sd_cmd_o,
   input  logic       sd_cmd_i,
@@ -1456,12 +1457,12 @@ module cheshire_soc import cheshire_pkg::*; #(
     reg_req_t sdhc_reg_req;
     reg_rsp_t sdhc_reg_rsp;
     axi_lite_to_reg #(
-      .ADDR_WIDTH     ( Cfg.AddrWidth ),
-      .DATA_WIDTH     ( 32 ),
-      .axi_lite_req_t ( sdio_axi_lite_req_t ),
-      .axi_lite_rsp_t ( sdio_axi_lite_rsp_t ),
-      .reg_req_t      ( reg_req_t           ),
-      .reg_rsp_t      ( reg_rsp_t           )
+      .ADDR_WIDTH        ( Cfg.AddrWidth ),
+      .DATA_WIDTH        ( 32 ),
+      .axi_lite_req_t    ( sdio_axi_lite_req_t ),
+      .axi_lite_rsp_t    ( sdio_axi_lite_rsp_t ),
+      .reg_req_t         ( reg_req_t           ),
+      .reg_rsp_t         ( reg_rsp_t           )
     ) i_sdio_axi_lite_to_reg (
       .clk_i,
       .rst_ni,
@@ -1471,17 +1472,19 @@ module cheshire_soc import cheshire_pkg::*; #(
       .reg_rsp_i      ( sdhc_reg_rsp    )
     );
 
-    user_sdhci #(
-      .AddrWidth ( Cfg.AddrWidth ),
-      .reg_req_t ( reg_req_t ),
-      .reg_rsp_t ( reg_rsp_t ),
-      .ClkPreDivLog ( 0 )
-    ) i_user_sdhci (
+    sdhci_top #(
+      .AddrWidth         ( Cfg.AddrWidth ),
+      .reg_req_t         ( reg_req_t ),
+      .reg_rsp_t         ( reg_rsp_t ),
+      .ClkPreDivLog      ( 0 ),
+      .NumDebounceCycles ( Cfg.SdioConfDebounceCycles )
+    ) i_sdhci_top (
       .clk_i,
       .rst_ni,
       .reg_req_i   ( sdhc_reg_req ),
       .reg_rsp_o   ( sdhc_reg_rsp ),
       .sd_clk_o,
+      .sd_cd_ni,
       .sd_cmd_en_o,
       .sd_cmd_o,
       .sd_cmd_i,

@@ -70,6 +70,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   inout  wire [ 3:0]          spih_sd,
   // SDIO host interface
   input  logic       sd_clk_o,
+  output logic       sd_cd_ni,
   input  logic       sd_cmd_en,
   input  logic       sd_cmd_o,
   output logic       sd_cmd_i,
