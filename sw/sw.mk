@@ -126,7 +126,7 @@ $(foreach link,$(CHS_SW_LINK_MODES),$(eval $(call chs_sw_ld_elf_rule,$(link))))
 %.bin: %.elf
 	$(CHS_SW_OBJCOPY) -O binary $< $@
 
-%.dtb: %.dts
+%.dtb: %.dts $(CHS_SW_DIR)/boot/cheshire.dtsi
 	$(CHS_SW_DTC) -I dts -O dtb -o $@ $<
 
 %.memh: %.elf
