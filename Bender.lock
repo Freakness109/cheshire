@@ -197,7 +197,7 @@ packages:
     - common_cells
     - tech_cells_generic
   sdhci:
-    revision: 482bff103ea39b102429ef555de261e3ba13df57
+    revision: 42bf91296f8a05b7670af76471bdd563edfeca14
     version: null
     source:
       Git: https://github.com/Freakness109/sdhci.git
