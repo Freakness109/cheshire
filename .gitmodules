@@ -9,3 +9,4 @@
 [submodule "sw/deps/sdhci"]
 	path = sw/deps/sdhci
 	url = https://github.com/Freakness109/sdhci
+	branch = new_driver

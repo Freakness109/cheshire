@@ -627,6 +627,8 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     .dat_o    ( sd_dat_i  )
   );
 
+  assign sd_cd_ni = '0;
+
   ////////////////
   //  SPI Host  //
   ////////////////
