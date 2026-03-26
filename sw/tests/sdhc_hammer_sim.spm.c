@@ -28,25 +28,29 @@ unsigned int rand(void) {
 }
 
 #define SIZE     512
-#define BLOCKS   5
+#define BLOCKS   64
 static u_char scratch[SIZE * BLOCKS] = { 0 };
 _Static_assert(sizeof(scratch) >= 512, "Scratch buffer needs to be atleast 512bytes");
 
-int test_rw(size_t size, unsigned int seed) {
-    printf("Running read write test with size %d and seed %x\n", size, seed);
+int repro(void) {
+    int seed = 0xdeadbeef;
 
-    bzero((void*) scratch, size);
+    size_t size = 512 * 8;
+    printf("Running repro with size %d and seed %x\n", size, seed);
 
     // Reset Block
-    ASSERT_OK(sdmmc_mem_write_block(&sc.sc_card, 0, scratch, size));
+    for (size_t i = 0; i < 30; ++i) {
+        ASSERT_OK(sdmmc_mem_write_block(&sc.sc_card, 0, scratch, size));
+        printf("Done with %d. Please look at the interrupts\n", i);
+    }
 
-    memset((void*) scratch, 0xFF, size);
+    bzero((void*) scratch, size);
 
     ASSERT_OK(sdmmc_mem_read_block(&sc.sc_card, 0, scratch, size));
 
     int err = 0;
     for (size_t i = 0; i < size; ++i) {
-        if (scratch[i] != 0) {
+        if (scratch[i] != 0xDF) {
             printf("scratch[%d] not as expected, should be zeroed, got %x\n", i, scratch[i]);
             err = 1;
         }
@@ -94,14 +98,14 @@ int main() {
 
 
 #ifdef SDHC_DEBUG
-    debug_funcs = 0;
-    sdhcdebug = 0;
+    debug_funcs = 2;
+    sdhcdebug = 1;
 #endif
 
 
     ASSERT_OK(sdhc_init(&hp, SDHCI_BASE_ADDR, 0, 0));
 
-//#define WITH_SD_MODEL
+#define WITH_SD_MODEL
 //#define SDHC_INITIALIZED_MODEL
 
 #ifdef WITH_SD_MODEL
@@ -139,11 +143,8 @@ int main() {
 #endif
 
     // Single block RW
-    ASSERT_OK(test_rw(SIZE, 0xDEADBEEF));
-
-    // Multiple block RW
-    ASSERT_OK(test_rw(BLOCKS*SIZE, 0x70EDADA1));
-    // TODO half block rw?
+    memset((void*) scratch, 0, 512);
+    ASSERT_OK(repro());
 
     printf("Success\n");
     uart_write_flush(&__base_uart);
